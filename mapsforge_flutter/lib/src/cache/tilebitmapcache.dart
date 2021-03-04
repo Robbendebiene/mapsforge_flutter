@@ -26,7 +26,7 @@ abstract class TileBitmapCache {
   ///
   /// Purges the whole cache. The cache can be used afterwards but will not return any items
   ///
-  void purgeAll();
+  Future<void> purgeAll();
 
   ///
   /// Purges the cache whose [Tile]s intersects with the given [boundingBox]. Any bitmap which is fully or partially intersecting the

@@ -45,7 +45,7 @@ class MemoryTileBitmapCache extends TileBitmapCache {
   }
 
   @override
-  void purgeAll() {
+  Future<void> purgeAll() async {
     _bitmaps.clear();
   }
 

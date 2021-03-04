@@ -42,7 +42,7 @@ class FileTileBitmapCache extends TileBitmapCache {
 //    });
   }
 
-  void purgeAll() async {
+  Future<void> purgeAll() async {
     if (_files == null) return;
     int count = 0;
     for (String file in _files) {
