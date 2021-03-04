@@ -1,3 +1,7 @@
+import 'dart:async';
+import 'dart:io';
+import 'dart:math';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +10,12 @@ import 'package:flutter/widgets.dart';
 import 'package:mapsforge_flutter/core.dart';
 import 'package:mapsforge_flutter/datastore.dart';
 import 'package:mapsforge_flutter/maps.dart';
+
+import 'package:mapsforge_flutter/src/layer/job/jobqueue.dart';
+import 'package:mapsforge_flutter/src/model/tile.dart';
+import 'package:mapsforge_flutter/src/utils/layerutil.dart';
+import 'package:path_provider/path_provider.dart';
+
 
 import 'package:rxdart/rxdart.dart';
 
@@ -30,6 +40,8 @@ class MapPageViewState extends State<MapPageView> with SingleTickerProviderState
   final BehaviorSubject<int> indoorLevelSubject = new BehaviorSubject<int>.seeded(0);
 
   double downloadProgress;
+
+  BoundingBox mapBoundingBox;
 
   MapModel mapModel;
 
@@ -109,6 +121,10 @@ class MapPageViewState extends State<MapPageView> with SingleTickerProviderState
             PopupMenuItem<String>(
               value: "start_location",
               child: Text("Back to Start"),
+            ),
+            PopupMenuItem<String>(
+              value: "performance_test",
+              child: Text("Start Performance Test"),
             ),
             PopupMenuItem<String>(
               enabled: false,
@@ -240,6 +256,8 @@ class MapPageViewState extends State<MapPageView> with SingleTickerProviderState
     final JobRenderer jobRenderer = MapDataStoreRenderer(mapDataStore, renderTheme, graphicFactory, true);
     final FileTileBitmapCache bitmapCache = FileTileBitmapCache(jobRenderer.getRenderKey());
 
+    mapBoundingBox = mapFile.boundingBox;
+
     mapModel = MapModel(
       displayModel: displayModel,
       graphicsFactory: graphicFactory,
@@ -284,6 +302,61 @@ class MapPageViewState extends State<MapPageView> with SingleTickerProviderState
       case 'start_location':
         this.viewModel.setMapViewPosition(widget.mapFileData.initialPositionLat, widget.mapFileData.initialPositionLong);
         this.viewModel.setZoomLevel(widget.mapFileData.initialZoomLevel);
+        break;
+
+      case 'performance_test':
+        final zoomLevelSequence = [14,16,18,20];
+
+        // always use same seed so sequence is determined
+        final random = new Random(1);
+
+        // clear all previous performance measurements
+        performance.clear();
+
+        int stepsPerZoomLevel = 50;
+
+        Timer.periodic(Duration(seconds: 2), (timer) async {
+          // exit performance test if all rounds are finished
+          if (timer.tick > stepsPerZoomLevel * zoomLevelSequence.length) {
+            // stop timer
+            timer.cancel();
+
+            var path;
+            // write performance measurements to file
+            if (Platform.isAndroid) {
+              path = await getExternalStorageDirectory();
+            }
+            else {
+              path = await getApplicationDocumentsDirectory();
+            }
+            final file = await File('${path.path}/performance_measurements-${widget.mapFileData.name}-${DateTime.now().toString()}.json').create(recursive: true);
+            file.writeAsString(performance.toString());
+            // show dialog with path to file
+            showDialog(context: context, builder: (_) => AlertDialog(
+                title: Text("Log saved at:"),
+                content: Text(path.path)
+            ));
+
+            return;
+          }
+
+          // clear cache every 10 steps
+          if (timer.tick % 10 == 0) {
+            await this.mapModel.tileBitmapCache.purgeAll();
+          }
+
+          // set next zoom level
+          if ((timer.tick - 1) % stepsPerZoomLevel == 0) {
+            int i = ((timer.tick - 1) / stepsPerZoomLevel).round();
+            this.viewModel.setZoomLevel(zoomLevelSequence[i]);
+          }
+
+          // get and set random position between map bounding box
+          double nextLatitude = random.nextDouble() * (this.mapBoundingBox.maxLatitude - this.mapBoundingBox.minLatitude) + this.mapBoundingBox.minLatitude;
+          double nextLongitude = random.nextDouble() * (this.mapBoundingBox.maxLongitude - this.mapBoundingBox.minLongitude) + this.mapBoundingBox.minLongitude;
+          this.viewModel.setMapViewPosition(nextLatitude, nextLongitude);
+        });
+
         break;
     }
   }
