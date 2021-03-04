@@ -235,6 +235,9 @@ class IsolateParam {
 /// Renders one job and produces the bitmap for the requested tile. In case of errors or no data a special bitmap will be produced.
 /// Executes the callback function when finished.
 ///
+
+Map<int,List<int>>performance = new Map<int,List<int>>();
+
 Future<TileBitmap> renderDirect(IsolateParam isolateParam) async {
   // _lock[++_roundRobin % _lock.length].synchronized(() async {
   Job job = isolateParam.job;
@@ -253,6 +256,12 @@ Future<TileBitmap> renderDirect(IsolateParam isolateParam) async {
     if (tileBitmap != null) {
       int diff = DateTime.now().millisecondsSinceEpoch - time;
 //      if (diff >= 100) _log.info("Renderer needed $diff ms for job ${job.toString()}");
+
+      if (!performance.containsKey(job.tile.zoomLevel)) {
+        performance[job.tile.zoomLevel] = <int>[];
+      }
+      performance[job.tile.zoomLevel].add(diff);
+
       //isolateParam.tileBitmapCache.addTileBitmap(job.tile, tileBitmap);
       return tileBitmap;
     } else {
