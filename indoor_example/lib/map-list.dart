@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'map-file-data.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'package:path/path.dart' as p;
+
 class MapList extends StatelessWidget {
   final List<MapFileData> mapFileDataList;
 
@@ -76,7 +78,7 @@ class MapList extends StatelessWidget {
       case 'delete_map_files':
         Directory dir = await getApplicationDocumentsDirectory();
         dir.list(recursive: false).forEach((f) async {
-          if (await FileSystemEntity.isFile(f.path)) {
+          if (await FileSystemEntity.isFile(f.path) && p.extension(f.path) == ".map") {
             f.delete();
           }
         });
