@@ -12,8 +12,6 @@ import 'package:mapsforge_flutter/datastore.dart';
 import 'package:mapsforge_flutter/maps.dart';
 
 import 'package:mapsforge_flutter/src/layer/job/jobqueue.dart';
-import 'package:mapsforge_flutter/src/model/tile.dart';
-import 'package:mapsforge_flutter/src/utils/layerutil.dart';
 import 'package:path_provider/path_provider.dart';
 
 
