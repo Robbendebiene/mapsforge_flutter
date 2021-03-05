@@ -86,7 +86,7 @@ class JobQueue {
     Map<Job, TileBitmap> toRemove = Map();
     jobSet.jobs.where((job) => !_listQueue.contains(job)).forEach((job) {
       TileBitmap tileBitmap = tileBitmapCache1stLevel.getTileBitmapSync(job.tile);
-      if (tileBitmap != null) {
+      if (false && tileBitmap != null) {
         toRemove[job] = tileBitmap;
       } else {
         _listQueue.add(job);
